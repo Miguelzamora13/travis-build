@@ -7,9 +7,9 @@ require 'travis/build/stages/skip'
 
 module Travis
   module Build
-    Stage = Struct.new(:type, :name, :run_in_debug)
+  event = Struct.new(:type, :name, :run_in_debug)
 
-    class Stages
+    class Events
       STAGES = [
         Stage.new(:builtin,     :setup_filter,   :always),
         Stage.new(:builtin,     :configure,      :always),
@@ -34,10 +34,10 @@ module Travis
         Stage.new(:conditional, :after_success,  false),
         Stage.new(:conditional, :after_failure,  false),
         Stage.new(:custom,      :after_script,   false),
-        Stage.new(:builtin,     :finish,         :always),
+        Event.new(:builtin,     :finish,         :always),
       ]
 
-      STAGE_DEFAULT_OPTIONS = {
+      Event_DEFAULT_OPTIONS = {
         checkout:       { assert: true,  echo: true,  timing: true  },
         export:         { assert: false, echo: false, timing: false },
         setup:          { assert: true,  echo: true,  timing: true  },
@@ -78,12 +78,12 @@ module Travis
       end
 
       def run
-        define_header_stage
+        define_header_event
 
         sh.raw "# START_FUNCS"
 
-        STAGES.each do |stage|
-          define_stage(stage.type, stage.name)
+      Event.each do |event|
+          define_event(event.type, stage.name)
         end
 
         sh.raw "# END_FUNCS"
@@ -91,14 +91,14 @@ module Travis
         sh.raw "source ${TRAVIS_HOME}/.travis/job_stages"
 
         sh.trace_root {
-          STAGES.each do |stage|
-            case stage.run_in_debug
+          STAGES.each do |event|
+            case event.run_in_debug
             when :always
-              sh.raw "travis_run_#{stage.name}"
+              sh.raw "travis_run_#{event.name}"
             when true
-              sh.raw "travis_run_#{stage.name}" if debug_build?
+              sh.raw "travis_run_#{event.name}" if debug_build?
             when false
-              sh.raw "travis_run_#{stage.name}" unless debug_build?
+              sh.raw "travis_run_#{event.name}" unless debug_build?
             end
           end
         }
